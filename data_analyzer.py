@@ -144,4 +144,38 @@ class DataAnalyzer:
             
             outlier_text += f"{col}:\n"
             outlier_text += f"  正常值范围: [{lower_bound:.3f}, {upper_bound:.3f}]\n"
-            outlier_text += f"  异常值数量: {outlier_count}
+            outlier_text += f"  异常值数量: {outlier_count} ({outlier_count/len(data)*100:.1f}%)\n"
+            
+            if outlier_count > 0:
+                outlier_text += f"  异常值: {outliers[col].tolist()[:5]}"  # 只显示前5个异常值
+                if outlier_count > 5:
+                    outlier_text += f" ... 和其他 {outlier_count - 5} 个值"
+            outlier_text += "\n\n"
+        
+        return outlier_text
+    
+    def data_quality_report(self, data):
+        """生成数据质量报告"""
+        report = "=== 数据质量报告 ===\n\n"
+        
+        # 基本统计
+        report += f"数据集大小: {data.shape}\n"
+        report += f"重复行数: {data.duplicated().sum()}\n"
+        report += f"内存使用: {data.memory_usage(deep=True).sum() / 1024**2:.2f} MB\n\n"
+        
+        # 列级别的质量指标
+        report += "列级别质量指标:\n"
+        for col in data.columns:
+            report += f"\n{col} ({data[col].dtype}):\n"
+            report += f"  唯一值数量: {data[col].nunique()}\n"
+            report += f"  缺失值比例: {data[col].isnull().mean()*100:.1f}%\n"
+            
+            if data[col].dtype in ['object', 'category']:
+                # 分类变量
+                report += f"  最常见值: {data[col].mode().iloc[0] if not data[col].mode().empty else 'N/A'}\n"
+            else:
+                # 数值变量
+                report += f"  平均值: {data[col].mean():.2f}\n"
+                report += f"  标准差: {data[col].std():.2f}\n"
+        
+        return report
